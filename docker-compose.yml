@@ -1,0 +1,83 @@
+services:
+  hub:
+    image: nginx:alpine
+    container_name: cc1000-hub
+    volumes:
+      - /home/marcodotcastro/Projects/laboratorio_volt/.workspace/worktrees/CC-1000/marketing-hub/public:/usr/share/nginx/html:ro
+    networks:
+      edge:
+        aliases:
+          - cc1000-hub
+
+  portal:
+    image: laboratorio-portal-agro:cc1000
+    container_name: cc1000-portal
+    command: ["bundle", "exec", "rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+    environment:
+      RAILS_ENV: production
+      SECRET_KEY_BASE: dummy_secret_key_base_for_laboratorio_volt_issue_1000_ok
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+    volumes:
+      - /home/marcodotcastro/Projects/laboratorio_volt/.workspace/worktrees/CC-1000/portal-agro/storage:/rails/storage
+    networks:
+      edge:
+        aliases:
+          - cc1000-portal
+
+  pmoc-db:
+    image: postgres:16-alpine
+    container_name: cc1000-pmoc-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pmoc_development
+    volumes:
+      - pmoc_data:/var/lib/postgresql/data
+    networks:
+      edge:
+        aliases:
+          - cc1000-pmoc-db
+
+  pmoc-redis:
+    image: redis:7-alpine
+    container_name: cc1000-pmoc-redis
+    networks:
+      edge:
+        aliases:
+          - cc1000-pmoc-redis
+
+  pmoc:
+    image: laboratorio-pmoc-pro:cc1000
+    container_name: cc1000-pmoc
+    command: ["bundle", "exec", "rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+    depends_on:
+      - pmoc-db
+      - pmoc-redis
+    environment:
+      RAILS_ENV: development
+      SECRET_KEY_BASE: dummy_secret_key_base_for_laboratorio_volt_issue_1000_ok
+      DATABASE_URL: postgres://postgres:postgres@cc1000-pmoc-db:5432/pmoc_development
+      REDIS_URL: redis://cc1000-pmoc-redis:6379/0
+      SMTP_ADDRESS: localhost
+      SMTP_PORT: "587"
+      SMTP_USERNAME: user
+      SMTP_PASSWORD: password
+      DEFAULT_FROM_EMAIL: contato@pmoc.local
+      MAILER_FROM: contato@pmoc.local
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+    volumes:
+      - /home/marcodotcastro/Projects/laboratorio_volt/.workspace/worktrees/CC-1000/pmoc-pro/pmoc-rails/storage:/rails/storage
+    networks:
+      edge:
+        aliases:
+          - cc1000-pmoc
+
+volumes:
+  pmoc_data:
+
+networks:
+  edge:
+    name: c2s_workspace_edge
+    external: true
