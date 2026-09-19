@@ -1,0 +1,21 @@
+# Local configuration and generated control-plane state.
+.env
+.bundle/
+.workspace/
+.worktrees/
+
+# Workspace-managed product clones are operational checkouts, not sources.
+repos/*
+!repos/.gitkeep
+
+# Local Orca/editor state.
+.zellij/*.local.kdl
+
+# Documentation site dependencies and generated output.
+website/node_modules/
+website/dist/
+website/.astro/
+website/.vercel/
+website/src/content/docs/specs/
+website/src/content/docs/releases/guides/cc-*.md
+website/public/specs-search-index.json

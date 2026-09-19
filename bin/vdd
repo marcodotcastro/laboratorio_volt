@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+require "vdd"
+
+begin
+  Vdd::CLI.start(Vdd::CLI.normalize_argv(ARGV))
+  exit(Vdd::CLI.exit_code)
+rescue Vdd::Error => error
+  Vdd::CLI.report_error(error, { json: ARGV.include?("--json"), quiet: ARGV.include?("--quiet") })
+  exit(error.code)
+rescue Thor::Error => error
+  usage_error = Vdd::UsageError.new(error.message)
+  Vdd::CLI.report_error(usage_error, { json: ARGV.include?("--json"), quiet: ARGV.include?("--quiet") }, phase: "usage")
+  exit(Vdd::EXIT_USAGE)
+end
