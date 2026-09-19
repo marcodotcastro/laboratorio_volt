@@ -1,0 +1,54 @@
+# Manifesto de Execução Isolada do PMOC Pro via Adaptador Soberano Volt
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: volt-adapter-pmoc-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-pmoc_development}
+    volumes:
+      - volt_pmoc_adapter_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: volt-adapter-pmoc-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  pmoc-pro:
+    build:
+      context: ../../.workspace/worktrees/CC-1000/pmoc-pro
+      dockerfile: ../../adapters/pmoc-pro/Dockerfile
+    image: volt-adapter-pmoc-pro:latest
+    container_name: volt-adapter-pmoc-pro
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${PMOC_PRO_PORT:-3002}:3000"
+    environment:
+      RAILS_ENV: development
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-dummy_secret_key_base_pmoc_pro_volt_ok}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-pmoc_development}
+      REDIS_URL: redis://redis:6379/0
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+    volumes:
+      - ../../.workspace/worktrees/CC-1000/pmoc-pro/pmoc-rails/storage:/rails/storage
+
+volumes:
+  volt_pmoc_adapter_pgdata:
