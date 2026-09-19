@@ -1,0 +1,18 @@
+# Manifesto de Execução Isolada do Portal Agro via Adaptador Soberano Volt
+services:
+  portal-agro:
+    build:
+      context: ../../.workspace/worktrees/CC-1000/portal-agro
+      dockerfile: ../../adapters/portal-agro/Dockerfile
+    image: volt-adapter-portal-agro:latest
+    container_name: volt-adapter-portal-agro
+    restart: unless-stopped
+    ports:
+      - "${PORTAL_AGRO_PORT:-3001}:3000"
+    environment:
+      RAILS_ENV: production
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-dummy_secret_key_base_portal_agro_volt_ok}
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+    volumes:
+      - ../../.workspace/worktrees/CC-1000/portal-agro/storage:/rails/storage
